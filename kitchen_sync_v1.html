@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Kitchen Sync</title>
+<style>
+:root{
+  --bg:#FAF7F2; --card:#FFFFFF; --text:#2B2420; --muted:#8A7F73; --border:#EAE3DA;
+  --primary:#C1652F; --primary-dark:#A0521F; --primary-bg:#FCEEE3;
+  --accent:#4C7A5E; --accent-bg:#E7F1EA;
+  --danger:#C0392B; --danger-bg:#FBEAE7;
+  --chip-bg:#F1ECE4; --chip-active:#C1652F; --chip-active-text:#fff;
+  --shadow:0 1px 3px rgba(43,36,32,.08),0 1px 2px rgba(43,36,32,.06);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); padding-bottom:78px;}
+.topbar{position:sticky; top:0; z-index:20; background:var(--bg); padding:16px 16px 8px; display:flex; align-items:center; justify-content:space-between;}
+.topbar h1{font-size:20px; margin:0; display:flex; align-items:center; gap:8px;}
+.icon-btn{background:none; border:none; font-size:20px; cursor:pointer; padding:6px; color:var(--muted);}
+.wrap{padding:0 16px 16px;}
+.card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin-bottom:12px; box-shadow:var(--shadow);}
+.card-title{font-weight:700; font-size:14px; margin-bottom:10px; display:flex; align-items:center; gap:6px;}
+.muted{color:var(--muted); font-size:13px;}
+.hidden{display:none !important;}
+
+.chip-row{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;}
+.chip{border:1px solid var(--border); background:var(--chip-bg); color:var(--text); border-radius:999px; padding:6px 12px; font-size:12.5px; cursor:pointer; white-space:nowrap; user-select:none;}
+.chip.active{background:var(--chip-active); color:var(--chip-active-text); border-color:var(--chip-active);}
+.chip.danger.active{background:var(--danger); border-color:var(--danger);}
+
+.btn{border:none; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:600; cursor:pointer; width:100%;}
+.btn-primary{background:var(--primary); color:#fff;}
+.btn-secondary{background:var(--chip-bg); color:var(--text);}
+.btn-accent{background:var(--accent); color:#fff;}
+.btn-danger{background:var(--danger-bg); color:var(--danger);}
+.btn-sm{width:auto; padding:8px 12px; font-size:13px;}
+.btn-row{display:flex; gap:8px;}
+.btn-row .btn{flex:1;}
+
+.input-field, textarea, select{width:100%; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:14px; background:#fff; color:var(--text); font-family:inherit;}
+textarea{resize:vertical; min-height:80px;}
+.form-group{margin-bottom:12px;}
+.input-label{font-size:12.5px; font-weight:600; color:var(--muted); margin-bottom:5px;}
+
+.ing-row{display:flex; gap:6px; margin-bottom:6px; align-items:center;}
+.ing-row .input-field{flex:2;}
+.ing-row .qty{flex:0 0 62px;}
+.ing-row .unit{flex:0 0 78px;}
+.ing-row .cat{flex:0 0 118px;}
+.ing-remove{background:none; border:none; color:var(--danger); font-size:18px; cursor:pointer; padding:2px 4px; flex:0 0 auto;}
+
+.recipe-card{position:relative;}
+.recipe-title{font-size:16px; font-weight:700; margin:0 0 4px;}
+.recipe-meta{display:flex; flex-wrap:wrap; gap:5px; margin:6px 0;}
+.tag{background:var(--chip-bg); color:var(--muted); border-radius:999px; padding:3px 9px; font-size:11.5px; font-weight:600;}
+.tag.protein{background:var(--primary-bg); color:var(--primary-dark);}
+.tag.allergen{background:var(--danger-bg); color:var(--danger);}
+.recipe-actions{display:flex; gap:8px; margin-top:10px;}
+.week-badge{position:absolute; top:14px; right:14px; background:var(--accent-bg); color:var(--accent); font-size:11px; font-weight:700; border-radius:999px; padding:3px 9px;}
+
+.tabbar{position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--border); display:flex; z-index:30; padding-bottom:env(safe-area-inset-bottom);}
+.tab-btn{flex:1; background:none; border:none; padding:10px 4px 8px; font-size:11px; color:var(--muted); cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px;}
+.tab-btn .ti{font-size:19px;}
+.tab-btn.active{color:var(--primary); font-weight:700;}
+
+.fab{position:fixed; right:16px; bottom:88px; width:54px; height:54px; border-radius:50%; background:var(--primary); color:#fff; border:none; font-size:26px; box-shadow:0 4px 12px rgba(193,101,47,.4); cursor:pointer; z-index:25;}
+
+.modal-bg{position:fixed; inset:0; background:rgba(43,36,32,.45); z-index:50; display:none; align-items:flex-end; justify-content:center;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg); width:100%; max-width:560px; max-height:92vh; overflow-y:auto; border-radius:18px 18px 0 0; padding:18px 16px 26px;}
+.modal-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;}
+.modal-header h2{font-size:17px; margin:0;}
+
+.empty-state{text-align:center; padding:40px 20px; color:var(--muted);}
+.empty-state .es-icon{font-size:38px; margin-bottom:8px;}
+
+.gl-cat{font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; margin:16px 0 6px;}
+.gl-item{display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--border);}
+.gl-item:last-child{border-bottom:none;}
+.gl-item input[type=checkbox]{width:19px; height:19px; flex:0 0 auto;}
+.gl-item.checked .gl-name{text-decoration:line-through; color:var(--muted);}
+.gl-name{flex:1; font-size:14.5px;}
+.gl-qty{font-size:12.5px; color:var(--muted);}
+.gl-remove{background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer;}
+
+.toast{position:fixed; left:50%; bottom:100px; transform:translateX(-50%) translateY(20px); background:#2B2420; color:#fff; padding:10px 18px; border-radius:10px; font-size:13.5px; opacity:0; pointer-events:none; transition:.25s; z-index:60;}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.settings-row{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);}
+.settings-row:last-child{border-bottom:none;}
+.switch{position:relative; width:42px; height:24px; flex:0 0 auto;}
+.switch input{opacity:0; width:0; height:0;}
+.slider{position:absolute; inset:0; background:var(--border); border-radius:999px; cursor:pointer; transition:.2s;}
+.slider:before{content:""; position:absolute; width:18px; height:18px; left:3px; top:3px; background:#fff; border-radius:50%; transition:.2s;}
+input:checked + .slider{background:var(--accent);}
+input:checked + .slider:before{transform:translateX(18px);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1 id="page-title">🍲 Kitchen Sync</h1>
+  <button class="icon-btn" onclick="openModal('settings-modal')">⚙️</button>
+</div>
+
+<div class="wrap">
+
+  <!-- ============ RECIPES TAB ============ -->
+  <div id="tab-recipes">
+    <div class="card">
+      <div class="card-title">🔎 Filter</div>
+      <div class="muted" style="margin-bottom:8px;">Tap to filter — tap again to clear.</div>
+      <div id="filter-protein" class="chip-row"></div>
+      <div id="filter-meal" class="chip-row"></div>
+      <div id="filter-season" class="chip-row"></div>
+      <div id="filter-style" class="chip-row"></div>
+      <div class="btn-row" style="margin-top:6px;">
+        <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear filters</button>
+        <button class="btn btn-accent btn-sm" onclick="feedMe()">🎲 Let Claude feed me</button>
+      </div>
+    </div>
+
+    <div id="recipe-list"></div>
+  </div>
+
+  <!-- ============ THIS WEEK TAB ============ -->
+  <div id="tab-week" class="hidden">
+    <div class="card">
+      <div class="card-title">📅 This week's menu</div>
+      <div class="muted">Recipes you've picked for the week. Head to the Recipes tab to add more, or the Grocery tab to build the list.</div>
+    </div>
+    <div id="week-list"></div>
+    <button class="btn btn-primary" style="margin-top:4px;" onclick="buildGroceryList()">🧾 Build / refresh grocery list from these</button>
+  </div>
+
+  <!-- ============ GROCERY TAB ============ -->
+  <div id="tab-grocery" class="hidden">
+    <div class="card">
+      <div class="card-title">➕ Add an item</div>
+      <div class="ing-row">
+        <input class="input-field" id="extra-name" placeholder="e.g. toilet paper, dog food">
+        <input class="input-field qty" id="extra-qty" placeholder="qty">
+        <button class="btn btn-primary btn-sm" onclick="addExtraItem()">Add</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🧾 Grocery list</div>
+      <div id="grocery-list"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-secondary" onclick="clearChecked()">Clear checked</button>
+        <button class="btn btn-primary" onclick="copyList()">📋 Copy list</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<button class="fab" id="fab-add" onclick="openRecipeEditor()">＋</button>
+
+<div class="tabbar">
+  <button class="tab-btn active" id="nav-recipes" onclick="showTab('recipes')"><span class="ti">🍲</span>Recipes</button>
+  <button class="tab-btn" id="nav-week" onclick="showTab('week')"><span class="ti">📅</span>This Week</button>
+  <button class="tab-btn" id="nav-grocery" onclick="showTab('grocery')"><span class="ti">🧾</span>Grocery</button>
+</div>
+
+<!-- ============ RECIPE EDITOR MODAL ============ -->
+<div class="modal-bg" id="recipe-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="re-title">New recipe</h2>
+      <button class="icon-btn" onclick="closeModal('recipe-modal')">✕</button>
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Title</div>
+      <input class="input-field" id="re-name" placeholder="e.g. Honey soy chicken traybake">
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Servings</div>
+      <input class="input-field" id="re-servings" placeholder="e.g. 4" style="max-width:100px;">
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Protein</div>
+      <div id="re-protein" class="chip-row"></div>
+    </div>
+    <div class="form-group">
+      <div class="input-label">Meal</div>
+      <div id="re-meal" class="chip-row"></div>
+    </div>
+    <div class="form-group">
+      <div class="input-label">Season</div>
+      <div id="re-season" class="chip-row"></div>
+    </div>
+    <div class="form-group">
+      <div class="input-label">Style</div>
+      <div id="re-style" class="chip-row"></div>
+    </div>
+    <div class="form-group">
+      <div class="input-label">Contains (allergens)</div>
+      <div id="re-allergen" class="chip-row"></div>
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Ingredients</div>
+      <div id="re-ingredients"></div>
+      <button class="btn btn-secondary btn-sm" onclick="addIngredientRow()">＋ Add ingredient</button>
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Method (one step per line)</div>
+      <textarea id="re-steps" placeholder="1. Preheat oven to 200°C&#10;2. Toss chicken in marinade&#10;3. Roast 25 min..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <div class="input-label">Notes (optional)</div>
+      <textarea id="re-notes" style="min-height:50px;" placeholder="e.g. double the marinade, Lauren likes it spicier"></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-danger" id="re-delete" onclick="deleteRecipe()">Delete</button>
+      <button class="btn btn-primary" onclick="saveRecipe()">Save recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RECIPE VIEW MODAL ============ -->
+<div class="modal-bg" id="view-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="rv-title">Recipe</h2>
+      <button class="icon-btn" onclick="closeModal('view-modal')">✕</button>
+    </div>
+    <div id="rv-meta" class="recipe-meta"></div>
+    <div class="muted" id="rv-servings" style="margin-bottom:10px;"></div>
+    <div class="card-title" style="margin-top:6px;">Ingredients</div>
+    <div id="rv-ingredients"></div>
+    <div class="card-title" style="margin-top:14px;">Method</div>
+    <div id="rv-steps" style="font-size:14px; line-height:1.6;"></div>
+    <div id="rv-notes-wrap" class="hidden">
+      <div class="card-title" style="margin-top:14px;">Notes</div>
+      <div id="rv-notes" class="muted"></div>
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-secondary" id="rv-week-btn" onclick="toggleWeekFromView()"></button>
+      <button class="btn btn-primary" onclick="editFromView()">✏️ Edit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div class="modal-bg" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="icon-btn" onclick="closeModal('settings-modal')">✕</button>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Allergies to avoid</div>
+      <div class="muted" style="margin-bottom:8px;">Recipes containing these are hidden by default across the app (Feed Me always respects this). You can still see everything from the Recipes tab by turning "show all" on below.</div>
+      <div id="settings-allergens" class="chip-row"></div>
+      <div class="settings-row">
+        <div>
+          <div style="font-weight:600; font-size:14px;">Show all recipes (ignore allergy filter)</div>
+        </div>
+        <label class="switch"><input type="checkbox" id="settings-showall" onchange="saveSettings()"><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 Backup</div>
+      <div class="muted" style="margin-bottom:10px;">This app stores everything on this device only for now — no account sync yet. Export a backup before switching phones or clearing browser data.</div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="exportData()">⬇️ Export JSON</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">⬆️ Import JSON</button>
+      </div>
+      <input type="file" id="import-file" accept="application/json" class="hidden" onchange="importData(event)">
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── CONSTANTS ──────────────────────────────────────────────────────────────
+const PROTEIN = ['Chicken','Fish','Pork','Lamb','Beef','Vegetarian','Other'];
+const MEAL = ['Lunch','Dinner'];
+const SEASON = ['Summer','Winter','Any'];
+const STYLE = ['Hearty','Salad','Soup','Other'];
+const ALLERGENS = ['Dairy','Gluten','Nuts','Soy','Shellfish','Egg'];
+const UNITS = ['g','kg','ml','L','cup','tbsp','tsp','clove','piece','tin','pkt',''];
+const CATS = ['Produce','Meat/Seafood','Dairy & Eggs','Pantry','Frozen','Bakery','Other'];
+const CAT_KEYWORDS = {
+  'Meat/Seafood':['chicken','beef','pork','lamb','fish','salmon','tuna','prawn','shrimp','mince','bacon','sausage','steak','turkey'],
+  'Dairy & Eggs':['milk','cheese','yoghurt','yogurt','butter','cream','egg'],
+  'Produce':['onion','garlic','tomato','potato','carrot','capsicum','pepper','lettuce','spinach','broccoli','zucchini','mushroom','lemon','lime','herb','basil','coriander','parsley','apple','banana','avocado','cucumber','ginger','chilli','chili','celery','kale'],
+  'Pantry':['rice','pasta','flour','sugar','salt','oil','vinegar','stock','sauce','spice','tin','can','beans','lentil','oats','honey','soy sauce','curry','paste','noodle'],
+  'Frozen':['frozen','peas','ice'],
+  'Bakery':['bread','bun','tortilla','wrap','roll']
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+const STORE_KEY = 'recipe_box_v1';
+let S = loadState();
+let currentEditId = null;
+let currentViewId = null;
+let filters = {protein:[], meal:[], season:[], style:[]};
+let editorTags = {protein:[], meal:[], season:[], style:[], allergen:[]};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {recipes:[], thisWeek:[], grocery:{items:[]}, settings:{avoidAllergens:[], showAll:false}};
+}
+function saveState(){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }
+  catch(e){ toast('⚠️ Could not save — storage may be full'); }
+}
+function newId(prefix){ return prefix+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2200); }
+
+// ─── TABS ───────────────────────────────────────────────────────────────────
+function showTab(name){
+  ['recipes','week','grocery'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
+    document.getElementById('nav-'+t).classList.toggle('active', t===name);
+  });
+  document.getElementById('fab-add').classList.toggle('hidden', name!=='recipes');
+  if(name==='week') renderWeek();
+  if(name==='grocery') renderGrocery();
+}
+
+// ─── MODALS ─────────────────────────────────────────────────────────────────
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ─── CHIP HELPERS ───────────────────────────────────────────────────────────
+function renderChipRow(containerId, options, activeArr, onToggle, dangerStyle){
+  const el = document.getElementById(containerId);
+  el.innerHTML = options.map(o=>{
+    const active = activeArr.includes(o);
+    return `<button type="button" class="chip${active?' active':''}${dangerStyle?' danger':''}" data-val="${esc(o)}">${esc(o)}</button>`;
+  }).join('');
+  [...el.children].forEach(btn=>{
+    btn.onclick = ()=>{
+      const v = btn.dataset.val;
+      const i = activeArr.indexOf(v);
+      if(i>-1) activeArr.splice(i,1); else activeArr.push(v);
+      onToggle();
+    };
+  });
+}
+
+// ─── FILTERS (Recipes tab) ──────────────────────────────────────────────────
+function renderFilters(){
+  renderChipRow('filter-protein', PROTEIN, filters.protein, ()=>{renderFilters();renderRecipeList();});
+  renderChipRow('filter-meal', MEAL, filters.meal, ()=>{renderFilters();renderRecipeList();});
+  renderChipRow('filter-season', SEASON, filters.season, ()=>{renderFilters();renderRecipeList();});
+  renderChipRow('filter-style', STYLE, filters.style, ()=>{renderFilters();renderRecipeList();});
+}
+function clearFilters(){ filters={protein:[],meal:[],season:[],style:[]}; renderFilters(); renderRecipeList(); }
+
+function isAllergySafe(r){
+  if(S.settings.showAll) return true;
+  const avoid = S.settings.avoidAllergens||[];
+  if(!avoid.length) return true;
+  return !(r.allergens||[]).some(a=>avoid.includes(a));
+}
+function matchesFilters(r){
+  if(!isAllergySafe(r)) return false;
+  for(const axis of ['protein','meal','season','style']){
+    if(filters[axis].length && !filters[axis].some(v=>(r[axis]||[]).includes(v))) return false;
+  }
+  return true;
+}
+
+// ─── RECIPE LIST ────────────────────────────────────────────────────────────
+function renderRecipeList(){
+  const list = S.recipes.filter(matchesFilters).sort((a,b)=>a.name.localeCompare(b.name));
+  const el = document.getElementById('recipe-list');
+  if(!S.recipes.length){
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">🍽️</div>No recipes yet.<br>Tap the ＋ to add your first one.</div>`;
+    return;
+  }
+  if(!list.length){
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">🔍</div>Nothing matches those filters.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(r=>{
+    const inWeek = S.thisWeek.includes(r.id);
+    const tags = [
+      ...(r.protein||[]).map(t=>`<span class="tag protein">${esc(t)}</span>`),
+      ...(r.meal||[]).map(t=>`<span class="tag">${esc(t)}</span>`),
+      ...(r.season||[]).map(t=>t!=='Any'?`<span class="tag">${esc(t)}</span>`:''),
+      ...(r.style||[]).map(t=>`<span class="tag">${esc(t)}</span>`),
+      ...(r.allergens||[]).map(t=>`<span class="tag allergen">⚠ ${esc(t)}</span>`),
+    ].join('');
+    return `<div class="card recipe-card" onclick="viewRecipe('${r.id}')">
+      ${inWeek?'<div class="week-badge">On this week</div>':''}
+      <div class="recipe-title">${esc(r.name)}</div>
+      <div class="recipe-meta">${tags}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── FEED ME ────────────────────────────────────────────────────────────────
+function feedMe(){
+  const pool = S.recipes.filter(isAllergySafe);
+  if(!pool.length){ toast('No safe recipes to pick from yet — add some first'); return; }
+  const pick = pool[Math.floor(Math.random()*pool.length)];
+  viewRecipe(pick.id);
+  toast('🎲 Claude picked: '+pick.name);
+}
+
+// ─── RECIPE VIEW ────────────────────────────────────────────────────────────
+function viewRecipe(id){
+  const r = S.recipes.find(x=>x.id===id); if(!r) return;
+  currentViewId = id;
+  document.getElementById('rv-title').textContent = r.name;
+  document.getElementById('rv-servings').textContent = r.servings? 'Serves '+r.servings : '';
+  const tags = [
+    ...(r.protein||[]).map(t=>`<span class="tag protein">${esc(t)}</span>`),
+    ...(r.meal||[]).map(t=>`<span class="tag">${esc(t)}</span>`),
+    ...(r.season||[]).map(t=>t!=='Any'?`<span class="tag">${esc(t)}</span>`:''),
+    ...(r.style||[]).map(t=>`<span class="tag">${esc(t)}</span>`),
+    ...(r.allergens||[]).map(t=>`<span class="tag allergen">⚠ ${esc(t)}</span>`),
+  ].join('');
+  document.getElementById('rv-meta').innerHTML = tags;
+  document.getElementById('rv-ingredients').innerHTML = (r.ingredients||[]).map(i=>
+    `<div class="gl-item"><span class="gl-name">${esc(i.name)}</span><span class="gl-qty">${esc(i.qty||'')} ${esc(i.unit||'')}</span></div>`
+  ).join('') || '<div class="muted">No ingredients listed.</div>';
+  document.getElementById('rv-steps').innerHTML = (r.steps||'').split('\n').filter(s=>s.trim()).map(s=>`<div style="margin-bottom:8px;">${esc(s)}</div>`).join('') || '<div class="muted">No method noted.</div>';
+  const notesWrap = document.getElementById('rv-notes-wrap');
+  if(r.notes && r.notes.trim()){ notesWrap.classList.remove('hidden'); document.getElementById('rv-notes').textContent = r.notes; }
+  else notesWrap.classList.add('hidden');
+  updateWeekBtn();
+  openModal('view-modal');
+}
+function updateWeekBtn(){
+  const inWeek = S.thisWeek.includes(currentViewId);
+  document.getElementById('rv-week-btn').textContent = inWeek ? '✓ On this week — remove' : '＋ Add to this week';
+}
+function toggleWeekFromView(){
+  const i = S.thisWeek.indexOf(currentViewId);
+  if(i>-1) S.thisWeek.splice(i,1); else S.thisWeek.push(currentViewId);
+  saveState(); updateWeekBtn(); renderRecipeList();
+}
+function editFromView(){ closeModal('view-modal'); openRecipeEditor(currentViewId); }
+
+// ─── RECIPE EDITOR ──────────────────────────────────────────────────────────
+function openRecipeEditor(id){
+  currentEditId = id || null;
+  const r = id ? S.recipes.find(x=>x.id===id) : null;
+  document.getElementById('re-title').textContent = r ? 'Edit recipe' : 'New recipe';
+  document.getElementById('re-delete').classList.toggle('hidden', !r);
+  document.getElementById('re-name').value = r ? r.name : '';
+  document.getElementById('re-servings').value = r ? (r.servings||'') : '';
+  document.getElementById('re-steps').value = r ? (r.steps||'') : '';
+  document.getElementById('re-notes').value = r ? (r.notes||'') : '';
+
+  editorTags = {
+    protein: r ? [...(r.protein||[])] : [],
+    meal: r ? [...(r.meal||[])] : [],
+    season: r ? [...(r.season||[])] : [],
+    style: r ? [...(r.style||[])] : [],
+    allergen: r ? [...(r.allergens||[])] : [],
+  };
+  renderChipRow('re-protein', PROTEIN, editorTags.protein, ()=>{});
+  renderChipRow('re-meal', MEAL, editorTags.meal, ()=>{});
+  renderChipRow('re-season', SEASON, editorTags.season, ()=>{});
+  renderChipRow('re-style', STYLE, editorTags.style, ()=>{});
+  renderChipRow('re-allergen', ALLERGENS, editorTags.allergen, ()=>{}, true);
+
+  const ingWrap = document.getElementById('re-ingredients');
+  ingWrap.innerHTML = '';
+  const ings = (r && r.ingredients && r.ingredients.length) ? r.ingredients : [{name:'',qty:'',unit:'',category:''}];
+  ings.forEach(ing=>addIngredientRow(ing));
+
+  openModal('recipe-modal');
+}
+
+function addIngredientRow(ing){
+  ing = ing || {name:'',qty:'',unit:'',category:''};
+  const wrap = document.getElementById('re-ingredients');
+  const row = document.createElement('div');
+  row.className = 'ing-row';
+  row.innerHTML = `
+    <input class="input-field ing-name" placeholder="ingredient" value="${esc(ing.name)}">
+    <input class="input-field qty ing-qty" placeholder="qty" value="${esc(ing.qty)}">
+    <select class="unit ing-unit">${UNITS.map(u=>`<option value="${esc(u)}" ${u===ing.unit?'selected':''}>${u||'—'}</option>`).join('')}</select>
+    <select class="cat ing-cat">${CATS.map(c=>`<option value="${esc(c)}" ${c===ing.category?'selected':''}>${c}</option>`).join('')}</select>
+    <button type="button" class="ing-remove" onclick="this.parentElement.remove()">✕</button>`;
+  wrap.appendChild(row);
+}
+
+function guessCategory(name){
+  const n = name.toLowerCase();
+  for(const cat of Object.keys(CAT_KEYWORDS)){
+    if(CAT_KEYWORDS[cat].some(k=>n.includes(k))) return cat;
+  }
+  return 'Other';
+}
+
+function saveRecipe(){
+  const name = document.getElementById('re-name').value.trim();
+  if(!name){ toast('Give the recipe a title first'); return; }
+  const ingredients = [...document.querySelectorAll('#re-ingredients .ing-row')].map(row=>{
+    const nm = row.querySelector('.ing-name').value.trim();
+    if(!nm) return null;
+    const cat = row.querySelector('.ing-cat').value || guessCategory(nm);
+    return {
+      name: nm,
+      qty: row.querySelector('.ing-qty').value.trim(),
+      unit: row.querySelector('.ing-unit').value,
+      category: cat
+    };
+  }).filter(Boolean);
+
+  const data = {
+    name,
+    servings: document.getElementById('re-servings').value.trim(),
+    protein: [...editorTags.protein],
+    meal: [...editorTags.meal],
+    season: [...editorTags.season],
+    style: [...editorTags.style],
+    allergens: [...editorTags.allergen],
+    ingredients,
+    steps: document.getElementById('re-steps').value,
+    notes: document.getElementById('re-notes').value.trim(),
+    updatedAt: Date.now()
+  };
+
+  if(currentEditId){
+    const idx = S.recipes.findIndex(r=>r.id===currentEditId);
+    if(idx>-1) S.recipes[idx] = {...S.recipes[idx], ...data};
+  } else {
+    data.id = newId('r'); data.createdAt = Date.now();
+    S.recipes.push(data);
+  }
+  saveState();
+  closeModal('recipe-modal');
+  renderRecipeList();
+  toast('✅ Saved "'+name+'"');
+}
+
+function deleteRecipe(){
+  if(!currentEditId) return;
+  if(!confirm("Delete this recipe? This can't be undone.")) return;
+  S.recipes = S.recipes.filter(r=>r.id!==currentEditId);
+  S.thisWeek = S.thisWeek.filter(id=>id!==currentEditId);
+  saveState();
+  closeModal('recipe-modal');
+  renderRecipeList();
+  toast('Deleted');
+}
+
+// ─── THIS WEEK ──────────────────────────────────────────────────────────────
+function renderWeek(){
+  const el = document.getElementById('week-list');
+  const recipes = S.thisWeek.map(id=>S.recipes.find(r=>r.id===id)).filter(Boolean);
+  if(!recipes.length){
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">📅</div>Nothing picked yet.<br>Open a recipe and tap "Add to this week".</div>`;
+    return;
+  }
+  el.innerHTML = recipes.map(r=>`
+    <div class="card recipe-card">
+      <div class="recipe-title" onclick="viewRecipe('${r.id}')">${esc(r.name)}</div>
+      <div class="recipe-actions">
+        <button class="btn btn-secondary btn-sm" onclick="removeFromWeek('${r.id}')">Remove from week</button>
+      </div>
+    </div>`).join('');
+}
+function removeFromWeek(id){
+  S.thisWeek = S.thisWeek.filter(x=>x!==id);
+  saveState(); renderWeek(); renderRecipeList();
+}
+
+// ─── GROCERY LIST ───────────────────────────────────────────────────────────
+function buildGroceryList(){
+  const recipes = S.thisWeek.map(id=>S.recipes.find(r=>r.id===id)).filter(Boolean);
+  if(!recipes.length){ toast('Add some recipes to this week first'); return; }
+
+  // Keep manual/extra items and checked-state; regenerate only the recipe-derived items.
+  const manual = S.grocery.items.filter(it=>!it.fromRecipe);
+  const prevChecked = {};
+  S.grocery.items.forEach(it=>{ prevChecked[it.key] = it.checked; });
+
+  const merged = {}; // key: name+unit -> item
+  recipes.forEach(r=>{
+    (r.ingredients||[]).forEach(ing=>{
+      const key = (ing.name.trim().toLowerCase())+'|'+(ing.unit||'');
+      if(!merged[key]){
+        merged[key] = {key, name:ing.name.trim(), unit:ing.unit||'', qty: ing.qty||'', category: ing.category||guessCategory(ing.name), fromRecipe:true, sources:[r.name], checked:!!prevChecked[key]};
+      } else {
+        const existingQty = parseFloat(merged[key].qty);
+        const addQty = parseFloat(ing.qty);
+        if(!isNaN(existingQty) && !isNaN(addQty)) merged[key].qty = (existingQty+addQty).toString();
+        else if(ing.qty) merged[key].qty = merged[key].qty ? merged[key].qty+' + '+ing.qty : ing.qty;
+        if(!merged[key].sources.includes(r.name)) merged[key].sources.push(r.name);
+      }
+    });
+  });
+
+  S.grocery.items = [...manual, ...Object.values(merged)];
+  saveState();
+  renderGrocery();
+  showTab('grocery');
+  toast('🧾 Grocery list built from '+recipes.length+' recipe'+(recipes.length>1?'s':''));
+}
+
+function addExtraItem(){
+  const name = document.getElementById('extra-name').value.trim();
+  if(!name) return;
+  const qty = document.getElementById('extra-qty').value.trim();
+  S.grocery.items.push({key:newId('extra'), name, qty, unit:'', category:guessCategory(name), fromRecipe:false, sources:[], checked:false});
+  document.getElementById('extra-name').value = '';
+  document.getElementById('extra-qty').value = '';
+  saveState(); renderGrocery();
+}
+
+function renderGrocery(){
+  const el = document.getElementById('grocery-list');
+  if(!S.grocery.items.length){
+    el.innerHTML = `<div class="empty-state"><div class="es-icon">🧾</div>List is empty.<br>Build it from This Week's recipes, or add items above.</div>`;
+    return;
+  }
+  const byCat = {};
+  S.grocery.items.forEach(it=>{ (byCat[it.category||'Other'] = byCat[it.category||'Other']||[]).push(it); });
+  const order = [...CATS, 'Other'];
+  let html = '';
+  order.forEach(cat=>{
+    if(!byCat[cat] || !byCat[cat].length) return;
+    html += `<div class="gl-cat">${cat}</div>`;
+    byCat[cat].sort((a,b)=>a.name.localeCompare(b.name)).forEach(it=>{
+      const qtyStr = [it.qty, it.unit].filter(Boolean).join(' ');
+      html += `<div class="gl-item${it.checked?' checked':''}">
+        <input type="checkbox" ${it.checked?'checked':''} onchange="toggleGroceryItem('${it.key}')">
+        <span class="gl-name">${esc(it.name)}</span>
+        <span class="gl-qty">${esc(qtyStr)}</span>
+        <button class="gl-remove" onclick="removeGroceryItem('${it.key}')">✕</button>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+function toggleGroceryItem(key){
+  const it = S.grocery.items.find(x=>x.key===key); if(!it) return;
+  it.checked = !it.checked; saveState(); renderGrocery();
+}
+function removeGroceryItem(key){
+  S.grocery.items = S.grocery.items.filter(x=>x.key!==key);
+  saveState(); renderGrocery();
+}
+function clearChecked(){
+  S.grocery.items = S.grocery.items.filter(it=>!it.checked);
+  saveState(); renderGrocery(); toast('Cleared checked items');
+}
+function copyList(){
+  const byCat = {};
+  S.grocery.items.filter(it=>!it.checked).forEach(it=>{ (byCat[it.category||'Other']=byCat[it.category||'Other']||[]).push(it); });
+  const order = [...CATS,'Other'];
+  let text = '';
+  order.forEach(cat=>{
+    if(!byCat[cat] || !byCat[cat].length) return;
+    text += cat+'\n';
+    byCat[cat].sort((a,b)=>a.name.localeCompare(b.name)).forEach(it=>{
+      const qtyStr = [it.qty, it.unit].filter(Boolean).join(' ');
+      text += '- '+it.name+(qtyStr?' ('+qtyStr+')':'')+'\n';
+    });
+    text += '\n';
+  });
+  if(!text){ toast('Nothing to copy'); return; }
+  navigator.clipboard.writeText(text.trim()).then(()=>toast('📋 Copied — paste into Woolies/Coles')).catch(()=>{
+    // fallback for browsers without clipboard API permission
+    const ta=document.createElement('textarea'); ta.value=text.trim(); document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('📋 Copied — paste into Woolies/Coles'); }catch(e){ toast('Could not copy — select and copy manually'); }
+    document.body.removeChild(ta);
+  });
+}
+
+// ─── SETTINGS ───────────────────────────────────────────────────────────────
+function renderSettings(){
+  renderChipRow('settings-allergens', ALLERGENS, S.settings.avoidAllergens, saveSettings, true);
+  document.getElementById('settings-showall').checked = !!S.settings.showAll;
+}
+function saveSettings(){
+  S.settings.showAll = document.getElementById('settings-showall').checked;
+  saveState();
+  renderRecipeList();
+}
+function exportData(){
+  const blob = new Blob([JSON.stringify(S,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'kitchen_sync_backup_'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('⬇️ Backup downloaded');
+}
+function importData(ev){
+  const file = ev.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    try{
+      const data = JSON.parse(reader.result);
+      if(!data.recipes) throw new Error('not a Kitchen Sync backup');
+      if(!confirm('Import will replace everything currently in this app on this device. Continue?')) return;
+      S = data;
+      S.grocery = S.grocery || {items:[]};
+      S.settings = S.settings || {avoidAllergens:[], showAll:false};
+      S.thisWeek = S.thisWeek || [];
+      saveState();
+      renderFilters(); renderRecipeList(); renderSettings();
+      toast('✅ Imported');
+    }catch(e){ toast('⚠️ Could not read that file'); }
+  };
+  reader.readAsText(file);
+  ev.target.value = '';
+}
+
+// ─── INIT ───────────────────────────────────────────────────────────────────
+function init(){
+  renderFilters();
+  renderRecipeList();
+  renderSettings();
+}
+init();
+</script>
+</body>
+</html>
